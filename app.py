@@ -22,7 +22,7 @@ db.init_app(app)
 
 
 
-@app.route("/30-day",methods=['POST'])
+# @app.route("/30-day",methods=['POST'])
 def timeline():
    url = "https://covid19.ddc.moph.go.th/api/Cases/timeline-cases-by-provinces"
    response = get(url)
@@ -97,7 +97,7 @@ def monthCases():
 def ss():
    print("cron job activate")
 
-@app.route("/daily",methods=['POST'])
+# @app.route("/daily",methods=['POST'])
 def dailyFunc():
    url = "https://raw.github.com/owid/covid-19-data/master/public/data/latest/owid-covid-latest.json"
    response = get(url)
@@ -131,6 +131,182 @@ def dailyFunc():
       # print(type(report))
       report.save()
    return json.dumps(reList)
+
+@app.route("/api/cases",methods=['get'])
+def Cases2():
+   args = request.args
+   
+   today = date.today()
+   yesterday = today-timedelta(days=1) 
+   qdate = args.get("date", default=yesterday.isoformat(), type=str)
+   curr_date = yesterday
+   date_arr = []
+   exc_field = ["id","created_at"]
+   data_arr = []
+  
+     
+   qData = Daily_report.objects(date=qdate).exclude(*exc_field).order_by("location").to_json()
+   reData ={"date":qdate,"result":json.loads(qData)}  
+   data_arr.append(reData)
+
+   return json.dumps(data_arr)
+
+@app.route("/api/sum-of-cases-range",methods=['get'])
+def sumnOfCases():
+   args = request.args
+   
+   today = date.today()
+   yesterday = today-timedelta(days=1) 
+   f_date = args.get("from", default=(yesterday-timedelta(days=7)).isoformat(), type=str)
+   t_date = args.get("to", default=yesterday.isoformat(), type=str)
+   arr = []
+ 
+   # locations = Daily_report.objects(date=yesterday.isoformat()).only("location").exclude("id").order_by("location").to_json()
+   from_data =json.loads(Daily_report.objects(date=f_date).exclude("id").order_by("location").to_json()) 
+   to_data =json.loads(Daily_report.objects(date=t_date).exclude("id").order_by("location").to_json())
+
+   for f in from_data:
+      for t in to_data:     
+         if f["location"]==t["location"]:
+            to_date = t.get("total_cases",0)
+            from_date = f.get("total_cases",0)
+            obj = {"location":f["location"],"sum-case":to_date-from_date}
+            arr.append(obj)
+            break
+
+   return json.dumps(arr)
+
+@app.route("/api/sum-of-cases",methods=['get'])
+def sumnOfCases2():
+   args = request.args
+   
+   today = date.today()
+   yesterday = today-timedelta(days=1) 
+   r_date = args.get("range", default=7, type=int)
+   start_date = args.get("date",default=yesterday.isoformat(),type=str)
+   # t_date = args.get("to", default=yesterday.isoformat(), type=str)
+   curr_date = date.fromisoformat(start_date) 
+   arr = []
+   
+   # print(f_date)
+   # print(t_date)  
+   for i in range(r_date):
+      locations_list = json.loads(Daily_report.objects(date=curr_date.isoformat()).only("location","new_cases").exclude("id").order_by("location").to_json())
+      
+      sum_of_cases = 0
+
+      if locations_list:
+         sum_of_cases = sum(i.get("new_cases",0) for i in locations_list)
+
+      obj = {"date":curr_date.isoformat(),"sum_of_cases":sum_of_cases}  
+      arr.append(obj)
+      curr_date = curr_date-timedelta(days = 1)
+
+
+   return json.dumps(arr)
+
+@app.route("/api/sum-of-deaths",methods=['get'])
+def sumnOfDeath():
+   args = request.args
+   
+   today = date.today()
+   yesterday = today-timedelta(days=1) 
+   r_date = args.get("range", default=7, type=int)
+   start_date = args.get("date",default=yesterday.isoformat(),type=str)
+   # t_date = args.get("to", default=yesterday.isoformat(), type=str)
+   curr_date = date.fromisoformat(start_date) 
+   arr = []
+   
+   # print(f_date)
+   # print(t_date)  
+   for i in range(r_date):
+      locations_list = json.loads(Daily_report.objects(date=curr_date.isoformat()).only("location","new_deaths").exclude("id").order_by("location").to_json())
+      
+      sum_of_deaths = 0
+
+      if locations_list:
+         sum_of_deaths = sum(i.get("new_deaths",0) for i in locations_list)
+
+      obj = {"date":curr_date.isoformat(),"sum_of_death":sum_of_deaths}  
+      arr.append(obj)
+      curr_date = curr_date-timedelta(days = 1)
+
+
+   return json.dumps(arr)
+
+@app.route("/api/sum-of",methods=['get'])
+def sumnOf():
+   args = request.args
+   
+   today = date.today()
+   yesterday = today-timedelta(days=1) 
+   r_date = args.get("range", default=7, type=int)
+   start_date = args.get("date",default=yesterday.isoformat(),type=str)
+   # t_date = args.get("to", default=yesterday.isoformat(), type=str)
+   curr_date = date.fromisoformat(start_date) 
+   arr = []
+   
+   # print(f_date)
+   # print(t_date)  
+   for i in range(r_date):
+      locations_list = json.loads(Daily_report.objects(date=curr_date.isoformat()).only("location","new_deaths","new_cases","total_deaths","total_cases").exclude("id").order_by("location").to_json())
+      
+      new_deaths = 0
+      new_cases = 0
+      total_death = 0
+      total_cases = 0
+
+      if locations_list:
+         new_deaths = sum(i.get("new_deaths",0) for i in locations_list)
+         new_cases = sum(i.get("new_cases",0) for i in locations_list)
+         total_death = sum(i.get("total_deaths",0) for i in locations_list)
+         total_cases = sum(i.get("total_cases",0) for i in locations_list)
+
+      obj = {"date":curr_date.isoformat(),
+         "new_deaths":new_deaths,
+         "new_cases":new_cases,
+         "total_deaths":total_death,
+         "total_cases":total_cases
+      }  
+      arr.append(obj)
+      curr_date = curr_date-timedelta(days = 1)
+
+
+   return json.dumps(arr)
+
+@app.route("/api/daily-data",methods=['get'])
+def daily_data():
+   args = request.args
+   
+   today = date.today()
+   yesterday = today-timedelta(days=1) 
+   r_date = args.get("date", default=yesterday.isoformat(), type=str)
+   # t_date = args.get("to", default=yesterday.isoformat(), type=str)
+   arr = []
+   
+   # print(f_date)
+   # print(t_date)  
+
+   locations_list = json.loads(Daily_report.objects(date=r_date).only("location","new_deaths","new_cases","total_deaths","total_cases").exclude("id").order_by("location").to_json())
+   
+   new_deaths = 0
+   new_cases = 0
+   total_death = 0
+   total_cases = 0
+
+   if locations_list:
+      new_deaths = sum(i.get("new_deaths",0) for i in locations_list)
+      new_cases = sum(i.get("new_cases",0) for i in locations_list)
+      total_death = sum(i.get("total_deaths",0) for i in locations_list)
+      total_cases = sum(i.get("total_cases",0) for i in locations_list)
+
+   obj = {"date":r_date,
+   "new_deaths":new_deaths,
+   "new_cases":new_cases,
+   "total_deaths":total_death,
+   "total_cases":total_cases
+   }  
+   return json.dumps(obj)
 
 
 class Daily_report(db.Document):
