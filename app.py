@@ -77,9 +77,22 @@ def todayCases2():
       today_date = curr_date.isoformat()
       date_arr.append(today_date)      
       qData = Daily_report.objects(date=today_date).exclude(*exc_field).order_by("location").to_json()
-      reData ={"date":today_date,"result":json.loads(qData)}
-      curr_date = curr_date-timedelta(days=1)   
-      data_arr.append(reData)
+      jbl = []
+      for j in json.loads(qData):
+         jb = {
+            "date":j.get("date"),
+            "newCase":j.get("new_cases"),
+            "totalCase":j.get("total_cases"),
+            "newDeath":j.get("new_deaths"),
+            "death":j.get("total_deaths"),
+            "location":j.get("location")
+         }
+         
+         jbl.append(jb)
+      reData ={"date":today_date,"result":jbl}
+      curr_date = curr_date-timedelta(days=1)  
+      if reData.get("result"): 
+         data_arr.append(reData)
 
    return json.dumps(data_arr)
 
@@ -146,8 +159,21 @@ def Cases2():
   
      
    qData = Daily_report.objects(date=qdate).exclude(*exc_field).order_by("location").to_json()
-   reData ={"date":qdate,"result":json.loads(qData)}  
-   data_arr.append(reData)
+   jbl = []
+   for j in json.loads(qData):
+      jb = {
+         "date":j.get("date"),
+         "newCase":j.get("new_cases"),
+         "totalCase":j.get("total_cases"),
+         "newDeath":j.get("new_deaths"),
+         "death":j.get("total_deaths"),
+         "location":j.get("location")
+      }
+      jbl.append(jb)
+   
+   reData ={"date":qdate,"result":jbl}  
+   if reData.get("result"): 
+      data_arr.append(reData)
 
    return json.dumps(data_arr)
 
