@@ -81,10 +81,10 @@ def todayCases2():
       for j in json.loads(qData):
          jb = {
             "date":j.get("date"),
-            "newCase":j.get("new_cases"),
-            "totalCase":j.get("total_cases"),
-            "newDeath":j.get("new_deaths"),
-            "death":j.get("total_deaths"),
+            "newCase":j.get("new_cases",0),
+            "totalCase":j.get("total_cases",0),
+            "newDeath":j.get("new_deaths",0),
+            "death":j.get("total_deaths",0),
             "location":j.get("location")
          }
          
@@ -163,10 +163,10 @@ def Cases2():
    for j in json.loads(qData):
       jb = {
          "date":j.get("date"),
-         "newCase":j.get("new_cases"),
-         "totalCase":j.get("total_cases"),
-         "newDeath":j.get("new_deaths"),
-         "death":j.get("total_deaths"),
+         "newCase":j.get("new_cases",0),
+         "totalCase":j.get("total_cases",0),
+         "newDeath":j.get("new_deaths",0),
+         "death":j.get("total_deaths",0),
          "location":j.get("location")
       }
       jbl.append(jb)
