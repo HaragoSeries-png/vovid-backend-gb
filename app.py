@@ -145,6 +145,12 @@ def dailyFunc():
       report.save()
    return json.dumps(reList)
 
+req_enum = ["new-cases","total-cases","new-deaths","total-deaths"]
+cluster_name = ["new_case_cluster","total_case_cluster","new_death_cluster","total_death_cluster"]
+s_c = ["new_cases","total_cases","new_deaths","total_deaths"]
+order_con = ["asc","desc"]
+
+continent = ["World","High income","Europe","Asia","European Union","Upper middle income","North America","Lower middle income","Low income",]
 @app.route("/api/cases",methods=['get'])
 def Cases2():
    args = request.args
@@ -152,15 +158,34 @@ def Cases2():
    today = date.today()
    yesterday = today-timedelta(days=1) 
    qdate = args.get("date", default=yesterday.isoformat(), type=str)
+   order = args.get("order",default="location", type=str)
+   by_string = args.get("by",default="desc", type=str)
    curr_date = yesterday
    date_arr = []
    exc_field = ["id","created_at"]
    data_arr = []
-  
-     
-   qData = Daily_report.objects(date=qdate).exclude(*exc_field).order_by("location").to_json()
+   continent = ["World","High income","Europe","Asia","European Union","Upper middle income","North America","Lower middle income","Low income",]
+   by = "-"
+   if order not in req_enum :
+      if order != "location":
+         return "order name wrong. try new-cases, total-cases, new-deaths, total-deaths"
+
+   if by_string in order_con:
+      if by_string == "asc": 
+         by=""
+   else:
+      return "by wrong. please choose between asc||desc"
+   
+   if order != "location":
+      idx = req_enum.index(order)    
+      qData = Daily_report.objects(date=qdate).exclude(*exc_field).order_by(by+s_c[idx]).to_json()
+
+   else:
+      qData = Daily_report.objects(date=qdate).exclude(*exc_field).order_by("location").to_json()
    jbl = []
    for j in json.loads(qData):
+      if j.get("location") in continent:
+         continue
       jb = {
          "date":j.get("date"),
          "newCase":j.get("new_cases",0),
@@ -193,6 +218,8 @@ def sumnOfCases():
 
    for f in from_data:
       for t in to_data:     
+         if t.get("location") in continent:
+            continue
          if f["location"]==t["location"]:
             to_date = t.get("total_cases",0)
             from_date = f.get("total_cases",0)
@@ -275,18 +302,20 @@ def sumnOf():
    # print(f_date)
    # print(t_date)  
    for i in range(r_date):
-      locations_list = json.loads(Daily_report.objects(date=curr_date.isoformat()).only("location","new_deaths","new_cases","total_deaths","total_cases").exclude("id").order_by("location").to_json())
+      locations_list = json.loads(Daily_report.objects(date=curr_date.isoformat(),location="World").only("location","new_deaths","new_cases","total_deaths","total_cases").exclude("id").to_json())
       
       new_deaths = 0
       new_cases = 0
       total_death = 0
       total_cases = 0
 
+      
+
       if locations_list:
-         new_deaths = sum(i.get("new_deaths",0) for i in locations_list)
-         new_cases = sum(i.get("new_cases",0) for i in locations_list)
-         total_death = sum(i.get("total_deaths",0) for i in locations_list)
-         total_cases = sum(i.get("total_cases",0) for i in locations_list)
+         new_deaths = locations_list[0]["new_deaths"]
+         new_cases = locations_list[0]["new_cases"]
+         total_death = locations_list[0]["total_deaths"]
+         total_cases = locations_list[0]["total_cases"]
 
       obj = {"date":curr_date.isoformat(),
          "new_deaths":new_deaths,
@@ -313,7 +342,7 @@ def daily_data():
    # print(f_date)
    # print(t_date)  
 
-   locations_list = json.loads(Daily_report.objects(date=r_date).only("location","new_deaths","new_cases","total_deaths","total_cases").exclude("id").order_by("location").to_json())
+   locations_list = json.loads(Daily_report.objects(date=r_date,location="World").only("location","new_deaths","new_cases","total_deaths","total_cases").exclude("id").order_by("location").to_json())
    
    new_deaths = 0
    new_cases = 0
@@ -321,10 +350,10 @@ def daily_data():
    total_cases = 0
 
    if locations_list:
-      new_deaths = sum(i.get("new_deaths",0) for i in locations_list)
-      new_cases = sum(i.get("new_cases",0) for i in locations_list)
-      total_death = sum(i.get("total_deaths",0) for i in locations_list)
-      total_cases = sum(i.get("total_cases",0) for i in locations_list)
+      new_deaths = locations_list[0]["new_deaths"]
+      new_cases = locations_list[0]["new_cases"]
+      total_death = locations_list[0]["total_deaths"]
+      total_cases = locations_list[0]["total_cases"]
 
    obj = {"date":r_date,
    "new_deaths":new_deaths,
