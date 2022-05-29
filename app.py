@@ -164,7 +164,7 @@ def Cases2():
    date_arr = []
    exc_field = ["id","created_at"]
    data_arr = []
-   continent = ["World","High income","Europe","Asia","European Union","Upper middle income","North America","Lower middle income","Low income",]
+   continent = ["World","High income","Europe","Asia","European Union","Upper middle income","North America","Lower middle income","Low income","South America","United Kingdom"]
    by = "-"
    if order not in req_enum :
       if order != "location":
